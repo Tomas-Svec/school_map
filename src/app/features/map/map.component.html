@@ -1,0 +1,62 @@
+<div class="map-container">
+  <div class="controls">
+    <div class="controls-row">
+      <label class="checkbox-label">
+        <input
+          type="checkbox"
+          [(ngModel)]="showSchools"
+          (change)="toggleSchools(showSchools)"
+        />
+        <span>Mostrar escuelas ({{ schools.length }})</span>
+      </label>
+
+      <button
+        class="btn btn-primary"
+        (click)="loadSchools()"
+        [disabled]="isLoading"
+      >
+        @if (!isLoading) {
+          <span>Recargar</span>
+        } @else {
+          <span>Cargando...</span>
+        }
+      </button>
+    </div>
+
+    @if (isLoading || errorMessage || loadingMessage) {
+      <div class="status">
+        @if (isLoading) {
+          <span class="loading">{{ loadingMessage }}</span>
+        }
+        @if (errorMessage) {
+          <span class="error">{{ errorMessage }}</span>
+        }
+      </div>
+    }
+
+    @if (schools.length > 0) {
+      <div class="legend">
+        <h4>Leyenda:</h4>
+        <div class="legend-item">
+          <span class="color-box hybrid"></span>
+          <span>Híbrido (IDECOR + OSM polígono)</span>
+        </div>
+        <div class="legend-item">
+          <span class="color-box idecor"></span>
+          <span>Solo IDECOR (oficial)</span>
+        </div>
+        <div class="legend-item">
+          <span class="color-box osm"></span>
+          <span>Solo OSM (adicional)</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div
+    leaflet
+    class="map"
+    [leafletOptions]="options"
+    (leafletMapReady)="onMapReady($event)"
+  ></div>
+</div>
