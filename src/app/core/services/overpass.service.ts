@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map, catchError, of, retry, timer, from, switchMap } from 'rxjs';
 import { School } from '../models/school.model';
+import { LayerFeature, LayerType } from '../models/layer.model';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,84 @@ export class OverpassService {
 
   getSchoolsInCordoba(): Observable<School[]> {
     return this.tryServer(0);
+  }
+
+  /**
+   * Obtiene amenities genéricos de OSM (police, fire_station, hospital, etc.)
+   */
+  getAmenities(amenityType: string, layerType: LayerType): Observable<LayerFeature[]> {
+    return this.tryAmenityServer(0, amenityType, layerType);
+  }
+
+  private tryAmenityServer(serverIndex: number, amenityType: string, layerType: LayerType): Observable<LayerFeature[]> {
+    if (serverIndex >= this.overpassServers.length) {
+      console.warn('All Overpass servers failed for amenity query');
+      return of([]);
+    }
+
+    const url = this.overpassServers[serverIndex];
+    const query = this.buildAmenityQuery(amenityType);
+    const headers = new HttpHeaders({ 'Content-Type': 'text/plain' });
+
+    console.log(`Fetching ${amenityType} from Overpass: ${url}`);
+
+    return this.http.post<any>(url, query, { headers }).pipe(
+      retry({
+        count: 2,
+        delay: (error, retryCount) => timer(1000 * retryCount)
+      }),
+      map(response => this.transformToLayerFeatures(response, layerType)),
+      catchError(error => {
+        console.error(`Error fetching ${amenityType}:`, error.message || error);
+        return this.tryAmenityServer(serverIndex + 1, amenityType, layerType);
+      })
+    );
+  }
+
+  private buildAmenityQuery(amenityType: string): string {
+    // Bbox que cubre toda la provincia de Córdoba
+    return `
+      [out:json][timeout:60];
+      (
+        node["amenity"="${amenityType}"](-35.0,-66.0,-29.5,-62.0);
+        way["amenity"="${amenityType}"](-35.0,-66.0,-29.5,-62.0);
+      );
+      out center;
+    `;
+  }
+
+  private transformToLayerFeatures(response: any, layerType: LayerType): LayerFeature[] {
+    if (!response?.elements) {
+      return [];
+    }
+
+    return response.elements.map((element: any) => {
+      let lat: number, lon: number;
+
+      if (element.type === 'node') {
+        lat = element.lat;
+        lon = element.lon;
+      } else if (element.center) {
+        lat = element.center.lat;
+        lon = element.center.lon;
+      } else {
+        return null;
+      }
+
+      const tags = element.tags || {};
+
+      return {
+        id: `osm_${element.type}_${element.id}`,
+        name: tags.name || tags['name:es'] || `${layerType} sin nombre`,
+        type: layerType,
+        coordinates: [lat, lon] as [number, number],
+        properties: {
+          osmId: element.id,
+          osmType: element.type,
+          ...tags
+        }
+      } as LayerFeature;
+    }).filter((f: LayerFeature | null): f is LayerFeature => f !== null);
   }
 
   private tryServer(serverIndex: number): Observable<School[]> {

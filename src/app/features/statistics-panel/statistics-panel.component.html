@@ -1,0 +1,102 @@
+@if (isVisible && analysisResult) {
+  <div class="statistics-panel">
+    <div class="panel-header">
+      <h3>Análisis de Buffer Zones</h3>
+      <button class="close-btn" (click)="onClose()">×</button>
+    </div>
+
+    <div class="panel-content">
+      <div class="summary-section">
+        <h4>Resumen Total</h4>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span class="icon">🏫</span>
+            <span class="value">{{ analysisResult.totalElements.schools }}</span>
+            <span class="label">Escuelas</span>
+          </div>
+          <div class="summary-item">
+            <span class="icon">🏥</span>
+            <span class="value">{{ analysisResult.totalElements.hospitals }}</span>
+            <span class="label">Hospitales</span>
+          </div>
+          <div class="summary-item">
+            <span class="icon">👮</span>
+            <span class="value">{{ analysisResult.totalElements.police }}</span>
+            <span class="label">Comisarías</span>
+          </div>
+          <div class="summary-item">
+            <span class="icon">🚒</span>
+            <span class="value">{{ analysisResult.totalElements.fireStations }}</span>
+            <span class="label">Bomberos</span>
+          </div>
+          <div class="summary-item">
+            <span class="icon">⚠️</span>
+            <span class="value">{{ analysisResult.totalElements.riskZones }}</span>
+            <span class="label">Zonas Riesgo</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="zones-section">
+        <h4>Estadísticas por Zona</h4>
+        @for (stats of analysisResult.statistics; track stats.zoneId; let i = $index) {
+          <div
+            class="zone-card"
+            [class]="getRiskClass(stats)"
+            (mouseenter)="onZoneMouseEnter(stats.zoneId)"
+            (mouseleave)="onZoneMouseLeave()">
+            <div class="zone-header">
+              <span class="zone-number">Zona {{ stats.zoneId }}</span>
+              <span class="zone-range">{{ getZoneRange(stats, i) }}</span>
+              <span class="risk-badge">{{ riskLabels[stats.riskLevel] }}</span>
+            </div>
+            <div class="zone-stats">
+              <div class="stat-row">
+                <span>🏫 Escuelas:</span>
+                <span class="stat-value">{{ stats.schools }}</span>
+              </div>
+              <div class="stat-row">
+                <span>🏥 Hospitales:</span>
+                <span class="stat-value">{{ stats.hospitals }}</span>
+              </div>
+              <div class="stat-row">
+                <span>👮 Comisarías:</span>
+                <span class="stat-value">{{ stats.police }}</span>
+              </div>
+              <div class="stat-row">
+                <span>🚒 Bomberos:</span>
+                <span class="stat-value">{{ stats.fireStations }}</span>
+              </div>
+              <div class="stat-row">
+                <span>⚠️ Zonas Riesgo:</span>
+                <span class="stat-value">{{ stats.riskZones }}</span>
+              </div>
+              <div class="stat-row total">
+                <span>Total:</span>
+                <span class="stat-value">{{ stats.total }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="legend-section">
+        <h4>Leyenda de Riesgo</h4>
+        <div class="legend-items">
+          <div class="legend-item">
+            <span class="legend-color high"></span>
+            <span>Alto Riesgo (0-3 km)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color medium"></span>
+            <span>Riesgo Medio (3-4 km)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color low"></span>
+            <span>Riesgo Bajo (4-5 km)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

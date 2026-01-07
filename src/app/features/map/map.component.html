@@ -1,62 +1,176 @@
 <div class="map-container">
-  <div class="controls">
-    <div class="controls-row">
-      <label class="checkbox-label">
-        <input
-          type="checkbox"
-          [(ngModel)]="showSchools"
-          (change)="toggleSchools(showSchools)"
-        />
-        <span>Mostrar escuelas ({{ schools.length }})</span>
-      </label>
-
-      <button
-        class="btn btn-primary"
-        (click)="loadSchools()"
-        [disabled]="isLoading"
-      >
-        @if (!isLoading) {
-          <span>Recargar</span>
-        } @else {
-          <span>Cargando...</span>
-        }
-      </button>
-    </div>
-
-    @if (isLoading || errorMessage || loadingMessage) {
-      <div class="status">
-        @if (isLoading) {
-          <span class="loading">{{ loadingMessage }}</span>
-        }
-        @if (errorMessage) {
-          <span class="error">{{ errorMessage }}</span>
-        }
-      </div>
-    }
-
-    @if (schools.length > 0) {
-      <div class="legend">
-        <h4>Leyenda:</h4>
-        <div class="legend-item">
-          <span class="color-box hybrid"></span>
-          <span>Híbrido (IDECOR + OSM polígono)</span>
-        </div>
-        <div class="legend-item">
-          <span class="color-box idecor"></span>
-          <span>Solo IDECOR (oficial)</span>
-        </div>
-        <div class="legend-item">
-          <span class="color-box osm"></span>
-          <span>Solo OSM (adicional)</span>
-        </div>
-      </div>
-    }
-  </div>
-
+  <!-- Mapa a pantalla completa -->
   <div
     leaflet
     class="map"
     [leafletOptions]="options"
     (leafletMapReady)="onMapReady($event)"
   ></div>
+
+  <!-- Panel Izquierdo - Controles de Capas -->
+  <div class="left-panel">
+    <div class="panel-header">
+      <h3>Capas del Mapa</h3>
+    </div>
+
+    <div class="panel-content">
+      <!-- Controles de Capas -->
+      <div class="layers-section">
+        @for (layer of layerConfigs; track layer.id) {
+          <label class="layer-checkbox">
+            <input
+              type="checkbox"
+              [checked]="layer.enabled"
+              (change)="toggleLayer(layer)"
+            />
+            <span class="checkbox-custom" [style.--layer-color]="layer.color"></span>
+            <span class="layer-icon">{{ layer.icon }}</span>
+            <span class="layer-text">{{ layer.name }}</span>
+          </label>
+        }
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="actions-section">
+        <button
+          class="action-btn buffer-btn"
+          [class.active]="isBufferMode"
+          (click)="toggleBufferMode()">
+          @if (isBufferMode) {
+            ✕ Cancelar Análisis
+          } @else {
+            🎯 Análisis Buffer
+          }
+        </button>
+
+        @if (bufferAnalysisResult) {
+          <button
+            class="action-btn clear-btn"
+            (click)="clearBufferAnalysis()">
+            🗑️ Limpiar Buffer
+          </button>
+        }
+
+        <button
+          class="action-btn reload-btn"
+          (click)="loadSchools()"
+          [disabled]="isLoading">
+          @if (!isLoading) {
+            🔄 Recargar Datos
+          } @else {
+            ⏳ Cargando...
+          }
+        </button>
+      </div>
+
+      <!-- Modo Buffer Activo -->
+      @if (isBufferMode) {
+        <div class="buffer-notice">
+          <div class="notice-icon">📍</div>
+          <div class="notice-text">
+            Haz clic en el mapa para crear zonas buffer
+          </div>
+        </div>
+      }
+
+      <!-- Configuración del Buffer -->
+      @if (isBufferMode || bufferAnalysisResult) {
+        <div class="buffer-config-section">
+          <h4>Configuración del Buffer</h4>
+
+          <!-- Slider Radio Total -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <label>Radio Total</label>
+              <span class="slider-value">{{ bufferTotalRadius }} km</span>
+            </div>
+            <input
+              type="range"
+              class="custom-slider"
+              min="1"
+              max="20"
+              step="1"
+              [(ngModel)]="bufferTotalRadius"
+              (input)="onBufferConfigChange()"
+            />
+            <div class="slider-marks">
+              <span>1 km</span>
+              <span>10 km</span>
+              <span>20 km</span>
+            </div>
+          </div>
+
+          <!-- Slider Ancho de Zona -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <label>Ancho por Zona</label>
+              <span class="slider-value">{{ bufferZoneWidth }} km</span>
+            </div>
+            <input
+              type="range"
+              class="custom-slider"
+              min="0.5"
+              max="5"
+              step="0.5"
+              [(ngModel)]="bufferZoneWidth"
+              (input)="onBufferConfigChange()"
+            />
+            <div class="slider-marks">
+              <span>0.5 km</span>
+              <span>2.5 km</span>
+              <span>5 km</span>
+            </div>
+          </div>
+
+          <!-- Info de zonas -->
+          <div class="zones-info">
+            <span class="zones-count">{{ numberOfZones }} zonas</span>
+          </div>
+        </div>
+      }
+
+      <!-- Estado y Mensajes -->
+      @if (isLoading || errorMessage) {
+        <div class="status-section">
+          @if (isLoading) {
+            <div class="status-message loading">
+              ⏳ {{ loadingMessage }}
+            </div>
+          }
+          @if (errorMessage) {
+            <div class="status-message error">
+              ⚠️ {{ errorMessage }}
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Leyenda -->
+      @if (schools.length > 0 && !bufferAnalysisResult) {
+        <div class="legend-section">
+          <h4>Leyenda de Escuelas</h4>
+          <div class="legend-item">
+            <span class="legend-box hybrid"></span>
+            <span>Híbrido (IDECOR + OSM)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-box idecor"></span>
+            <span>Solo IDECOR</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-box osm"></span>
+            <span>Solo OSM</span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Panel Derecho - Estadísticas -->
+  <app-statistics-panel
+    [analysisResult]="bufferAnalysisResult"
+    [isVisible]="showStatisticsPanel"
+    (close)="onStatisticsPanelClose()"
+    (zoneHover)="onZoneHover($event)"
+  ></app-statistics-panel>
 </div>

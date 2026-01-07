@@ -7,7 +7,7 @@ export const MAP_CONFIG = {
   },
   zoom: {
     default: 13,
-    min: 10,
+    min: 5,
     max: 18
   }
 };

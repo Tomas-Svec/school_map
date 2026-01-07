@@ -1,100 +1,408 @@
 .map-container {
   height: 100vh;
-  display: flex;
-  flex-direction: column;
+  position: relative;
 
-  .controls {
-    padding: 1rem;
-    background: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  .map {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+
+  // Panel Izquierdo Flotante
+  .left-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 320px;
+    max-height: calc(100vh - 40px);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    overflow: hidden;
 
-    .controls-row {
+    .panel-header {
+      padding: 1.25rem 1.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+      h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+    }
+
+    .panel-content {
+      padding: 1.25rem;
+      overflow-y: auto;
       display: flex;
-      gap: 1rem;
-      align-items: center;
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 1.25rem;
 
-      .checkbox-label {
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+
+        &:hover {
+          background: #555;
+        }
+      }
+    }
+
+    // Sección de Capas con Checkboxes
+    .layers-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+
+      .layer-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+
+        &:hover {
+          border-color: var(--layer-color, #3498db);
+          background: rgba(52, 152, 219, 0.05);
+          transform: translateX(4px);
+        }
+
+        input[type="checkbox"] {
+          position: absolute;
+          opacity: 0;
+          cursor: pointer;
+
+          &:checked ~ .checkbox-custom {
+            background: var(--layer-color, #3498db);
+            border-color: var(--layer-color, #3498db);
+
+            &::after {
+              display: block;
+            }
+          }
+        }
+
+        .checkbox-custom {
+          width: 20px;
+          height: 20px;
+          border: 2px solid #ccc;
+          border-radius: 5px;
+          background: white;
+          position: relative;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+
+          &::after {
+            content: '✓';
+            position: absolute;
+            display: none;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+          }
+        }
+
+        .layer-icon {
+          font-size: 1.25rem;
+          flex-shrink: 0;
+        }
+
+        .layer-text {
+          font-weight: 500;
+          color: #2c3e50;
+          font-size: 0.9rem;
+        }
+      }
+    }
+
+    // Sección de Acciones
+    .actions-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      border-top: 1px solid #e0e0e0;
+      padding-top: 1rem;
+
+      .action-btn {
+        padding: 0.75rem 1rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        &.buffer-btn {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+
+          &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+          }
+
+          &.active {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+          }
+        }
+
+        &.clear-btn {
+          background: #e74c3c;
+          color: white;
+
+          &:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+          }
+        }
+
+        &.reload-btn {
+          background: #3498db;
+          color: white;
+
+          &:hover:not(:disabled) {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+          }
+        }
+      }
+    }
+
+    // Notificación Modo Buffer
+    .buffer-notice {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 10px;
+      animation: pulse 2s infinite;
+
+      .notice-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+      }
+
+      .notice-text {
+        font-size: 0.85rem;
+        font-weight: 500;
+        line-height: 1.4;
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.85; }
+    }
+
+    // Sección de Configuración del Buffer
+    .buffer-config-section {
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid #667eea;
+
+      h4 {
+        margin: 0 0 1rem 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #2c3e50;
+      }
+
+      .slider-group {
+        margin-bottom: 1.25rem;
+
+        &:last-of-type {
+          margin-bottom: 0.75rem;
+        }
+
+        .slider-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+
+          label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #555;
+          }
+
+          .slider-value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+          }
+        }
+
+        .custom-slider {
+          width: 100%;
+          height: 6px;
+          -webkit-appearance: none;
+          appearance: none;
+          background: linear-gradient(to right, #667eea, #764ba2);
+          border-radius: 3px;
+          outline: none;
+          cursor: pointer;
+
+          &::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+
+            &:hover {
+              transform: scale(1.15);
+              box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+            }
+          }
+
+          &::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+
+            &:hover {
+              transform: scale(1.15);
+            }
+          }
+        }
+
+        .slider-marks {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 0.35rem;
+          font-size: 0.7rem;
+          color: #999;
+        }
+      }
+
+      .zones-info {
+        display: flex;
+        justify-content: center;
+        padding-top: 0.5rem;
+        border-top: 1px dashed #ddd;
+
+        .zones-count {
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: #667eea;
+          background: rgba(102, 126, 234, 0.1);
+          padding: 0.35rem 0.75rem;
+          border-radius: 15px;
+        }
+      }
+    }
+
+    // Estado y Mensajes
+    .status-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      .status-message {
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        cursor: pointer;
-        font-weight: 500;
 
-        input[type='checkbox'] {
-          width: 20px;
-          height: 20px;
-          cursor: pointer;
+        &.loading {
+          background: #e3f2fd;
+          color: #1976d2;
+          border-left: 4px solid #1976d2;
+        }
+
+        &.error {
+          background: #ffebee;
+          color: #d32f2f;
+          border-left: 4px solid #d32f2f;
         }
       }
     }
 
-    .btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 4px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-
-      &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-
-      &.btn-primary {
-        background: #3498db;
-        color: white;
-
-        &:hover:not(:disabled) {
-          background: #2980b9;
-        }
-      }
-    }
-
-    .status {
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      font-size: 0.9rem;
-      font-weight: 500;
-
-      .loading {
-        color: #1976d2;
-      }
-
-      .error {
-        color: #d32f2f;
-      }
-    }
-
-    .legend {
-      padding: 0.75rem;
-      background: #f5f5f5;
-      border-radius: 4px;
+    // Leyenda
+    .legend-section {
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 10px;
       border-left: 4px solid #3498db;
 
       h4 {
-        margin: 0 0 0.5rem 0;
+        margin: 0 0 0.75rem 0;
         font-size: 0.9rem;
+        font-weight: 600;
         color: #2c3e50;
       }
 
       .legend-item {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        margin: 0.25rem 0;
+        gap: 0.75rem;
+        margin: 0.5rem 0;
         font-size: 0.85rem;
+        color: #555;
 
-        .color-box {
-          width: 20px;
-          height: 20px;
+        .legend-box {
+          width: 18px;
+          height: 18px;
           border: 2px solid #333;
-          border-radius: 2px;
+          border-radius: 3px;
+          flex-shrink: 0;
 
           &.hybrid {
             background: #9b59b6;
@@ -110,10 +418,6 @@
         }
       }
     }
-  }
-
-  .map {
-    flex: 1;
   }
 }
 
@@ -173,6 +477,21 @@
     }
   }
 
+  .feature-popup {
+    min-width: 200px;
+
+    h3 {
+      margin: 0 0 0.5rem 0;
+      color: #2c3e50;
+      font-size: 1rem;
+    }
+
+    p {
+      margin: 0.25rem 0;
+      font-size: 0.85rem;
+    }
+  }
+
   .leaflet-popup-content-wrapper {
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -180,5 +499,15 @@
 
   .leaflet-popup-tip {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .buffer-center-icon {
+    background: none;
+    border: none;
+
+    .center-marker {
+      font-size: 24px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
   }
 }
